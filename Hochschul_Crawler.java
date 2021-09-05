@@ -5,6 +5,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.net.URISyntaxException;
@@ -13,8 +14,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Properties;
+import java.util.Scanner;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
+
+//Semesterdaten mit in der Registry abspeichern
 
 public class Hochschul_Crawler {
     private static String username = "";
@@ -22,8 +26,7 @@ public class Hochschul_Crawler {
 
     public static void main(String[] args) throws IOException, InterruptedException {
         Hochschul_Crawler hsc = new Hochschul_Crawler();
-
-        //checkOnUpdates();
+        checkOnUpdates();
         while(true) {
             LocalDateTime localdatetime = LocalDateTime.now();
             if (!(localdatetime.getHour() >= 0 && localdatetime.getHour() <= 5)) {
@@ -37,16 +40,17 @@ public class Hochschul_Crawler {
 
     private static void checkOnUpdates() {
         try {
-            URL url = new URL("http://www.example.com");
-            HttpURLConnection huc = (HttpURLConnection) url.openConnection();
-
-            int responseCode = huc.getResponseCode();
-            if(HttpURLConnection.HTTP_OK == responseCode)
-                sendWinNotification("Hochschul-Crawler", "Es ist ein Update verfügbar!", "");
-            
+            URL version_website = new URL ("https://mariolampert.de/HS-Bot/newest_version.txt");
+            String newest_Version = new Scanner(version_website.openStream()).next();
+            Preferences prefs = Preferences.userRoot().node("Hochschul-Scraper");
+            String reg_Version = prefs.get("newest_Version", "");
+            if(!(reg_Version.equals(newest_Version))) {
+                sendWinNotification("Hochschul-Crawler", "Es ist ein Update verfügbar!\nÜber den Installer kannst du das neue Update installieren.", "");
+            }
         } catch (IOException e) {
 
         }
+
     }
 
     public static void sendWinNotification(String title, String subtitle, String pathToIcon) {
@@ -62,13 +66,6 @@ public class Hochschul_Crawler {
             e.printStackTrace();
         }
     }
-
-    /*public static void sendDiscordNotification(String module) throws IOException {
-        DiscordWebhook webhook = new DiscordWebhook("https://discord.com/api/webhooks/871472889793245214/9lrtRuRqNNi4LTzrA0oBOO4MgK9Nj8B0lAjAcgXfELYu374im8d7I9p8hu_keVjba0W5");
-        webhook.setContent("@everyone " + module + " Noten sind da!");
-        webhook.setUsername(module);
-        webhook.execute();
-    }*/
 
     public void getlogin() {
         Preferences prefs = Preferences.userRoot().node("Hochschul-Scraper");
@@ -118,7 +115,7 @@ public class Hochschul_Crawler {
             grades = g.click();
             webClient.close();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(new JFrame(), "Hier hat etwas nicht funktioniert!", "Hochschul-Crawler",
+            JOptionPane.showMessageDialog(new JFrame(), "Hier hat etwas nicht funktioniert!\nVielleicht sind deine Anmeldedaten falsch?", "Hochschul-Crawler",
                     JOptionPane.ERROR_MESSAGE);
             System.exit(0);
         }
