@@ -137,37 +137,38 @@ public class Hochschul_Crawler {
         }
         int counter = 1;
         String s;
-        String tmp = "";
+        String mod = "";
+        Preferences prefs = Preferences.userRoot().node("Hochschul-Scraper");
         while ((s = reader.readLine()) != null) {
-            counter += 1;
-            if (counter % 2 == 0) {
-                s = s + " " + tmp;
-                if (((s.contains("BE") || s.contains("NB") || s.contains("NE")) && s.contains(semester)) && (!(s.contains("PV") || s.contains("Studienleistung")))) {
-                    tmp = tmp.replace("\t", " ");
-                    tmp = tmp.replace("  ", " ");
+            if(((s.contains("BE") || s.contains("NB") || s.contains("NE")) && s.contains(semester)) && (!(mod.contains("PV") || mod.contains("Studienleistung")))) {
+                mod = mod.replace("\t", " ");
+                mod = mod.replace("  ", " ");
 
-                    Preferences prefs = Preferences.userRoot().node("Hochschul-Scraper");
-                    boolean pref_exists = false;
-                    try {
-                        for(String preference : prefs.keys()) {
-                            if(preference.equals(tmp)) {
-                                pref_exists = true;
-                            }
+                String mod_reg = mod;
+                mod_reg = mod_reg.replace("ä", "ae");
+                mod_reg = mod_reg.replace("ö", "oe");
+                mod_reg = mod_reg.replace("ü", "ue");
+                mod_reg = mod_reg.replace("Ä", "AE");
+                mod_reg = mod_reg.replace("Ö", "OE");
+                mod_reg = mod_reg.replace("Ü", "UE");
+
+                boolean pref_exists = false;
+                try {
+                    for (String preference : prefs.keys()) {
+                        if (preference.equals(mod_reg)) {
+                            pref_exists = true;
                         }
-                    } catch (BackingStoreException backingStoreException) {
+                    }
+                } catch (BackingStoreException backingStoreException) {
 
-                    }
-                    if(pref_exists == false) {
-                        prefs.put(tmp, "1");
-                        sendWinNotification("QIS-Benachrichtigung", "Für \"" + tmp + "\" sind die Noten im QIS eingetragen!", "favicon_FHTRIER.jpg");
-                    }
-                    //sendDiscordNotification(tmp);
+                }
+                if (pref_exists == false) {
+                    prefs.put(mod_reg, "1");
+                    sendWinNotification("QIS-Benachrichtigung", "Für \"" + mod + "\" sind die Noten im QIS eingetragen!", "favicon_FHTRIER.jpg");
                 }
             }
-            tmp = s;
+            mod = s;
         }
         reader.close();
     }
 }
-
-
