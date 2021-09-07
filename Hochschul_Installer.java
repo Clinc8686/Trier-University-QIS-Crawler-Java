@@ -381,7 +381,7 @@ public class Hochschul_Installer extends javax.swing.JFrame {
             }   
             try {
                 deleteHKEY();
-                Process p = Runtime.getRuntime().exec("REG ADD HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run /v Hochschul-Bot /d \""+ absolute_Filedirectory+"\"\\"+newest_Version);
+                Process p = Runtime.getRuntime().exec("REG ADD HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run /v Hochschul-Bot /d \"\\\""+absolute_Filedirectory+"\\"+newest_Version + "\"\\\"");
             } catch (Exception e) {
                 statusbar.append("Installation \nfehlgeschlagen! \nKonnte Autostart nicht hinzufügen!");
                 statusbar.update(statusbar.getGraphics());
@@ -472,7 +472,7 @@ public class Hochschul_Installer extends javax.swing.JFrame {
                 }*/
                 
                 deleteHKEY();
-                Process p = Runtime.getRuntime().exec("REG ADD HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run /v Hochschul-Bot /d \""+ absolute_Filedirectory+"\"\\"+newest_Version);
+                Process p = Runtime.getRuntime().exec("REG ADD HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run /v Hochschul-Bot /d \"\\\""+absolute_Filedirectory+"\\"+newest_Version + "\"\\\"");
                 prefs.put("newest_Version", newest_Version);
                 
                 statusbar.append("Neuste Updates\nwurden installiert.\nNach dem nächsten\nNeustart funktionieren\ndiese.\n");
