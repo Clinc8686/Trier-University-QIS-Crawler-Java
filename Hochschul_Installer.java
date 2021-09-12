@@ -5,7 +5,7 @@
  */
 package hochschul_installer;
 
-import java.awt.Color;
+import javax.swing.*;
 import java.util.prefs.Preferences;
 import java.io.FileOutputStream;
 import java.net.URL;
@@ -23,6 +23,15 @@ import java.io.InputStream;
 import javax.swing.JFileChooser;
 import java.io.*;
 
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
+import java.util.Base64;
+ 
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
+
 /**
  *
  * @author Mario
@@ -36,6 +45,8 @@ public class Hochschul_Installer extends javax.swing.JFrame {
     }
     String newest_Version = "";
     String absolute_Filedirectory = System.getProperty("user.home");
+    private static byte[] key;
+    private static SecretKeySpec secretKey;
     
     /**
      * This method is called from within the constructor to initialize the form.
@@ -65,6 +76,10 @@ public class Hochschul_Installer extends javax.swing.JFrame {
         QIS_Username = new javax.swing.JLabel();
         change_directory = new javax.swing.JButton();
         InstallDirectory = new javax.swing.JLabel();
+        auth_key = new javax.swing.JPasswordField();
+        auth_key2 = new javax.swing.JLabel();
+        QIS_Password2 = new javax.swing.JLabel();
+        auth_key1 = new javax.swing.JLabel();
         RedText_Line1 = new java.awt.Label();
         RedText_Line2 = new java.awt.Label();
         RedText_Line3 = new java.awt.Label();
@@ -106,7 +121,7 @@ public class Hochschul_Installer extends javax.swing.JFrame {
         update.setFont(new java.awt.Font("Verdana", 0, 14)); // NOI18N
         update.setForeground(new java.awt.Color(255, 102, 0));
         update.setText("update");
-        update.setToolTipText("Prüfe auf Updates & installiere diese gegbenenfalls");
+        update.setToolTipText("Prüfe auf Updates & installiere diese gegebenenfalls");
         update.setBorder(null);
         update.setBorderPainted(false);
         update.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
@@ -117,6 +132,7 @@ public class Hochschul_Installer extends javax.swing.JFrame {
         });
 
         jLabel3.setText("© Mario Lampert");
+        jLabel3.setToolTipText("I bims!");
 
         javax.swing.GroupLayout Left_PanelLayout = new javax.swing.GroupLayout(Left_Panel);
         Left_Panel.setLayout(Left_PanelLayout);
@@ -196,6 +212,7 @@ public class Hochschul_Installer extends javax.swing.JFrame {
         Center_Panel.setBackground(new java.awt.Color(255, 204, 153));
 
         Center_Center_Panel.setBackground(new java.awt.Color(255, 255, 255));
+        Center_Center_Panel.setPreferredSize(new java.awt.Dimension(500, 289));
 
         username.setBackground(new java.awt.Color(233, 233, 233));
         username.setFont(new java.awt.Font("Verdana", 0, 14)); // NOI18N
@@ -214,7 +231,7 @@ public class Hochschul_Installer extends javax.swing.JFrame {
         safe_install.setFont(new java.awt.Font("Verdana", 0, 14)); // NOI18N
         safe_install.setForeground(new java.awt.Color(255, 255, 255));
         safe_install.setText("download and install");
-        safe_install.setToolTipText("Installiere den Crawler im aktuellen Verzeichnis");
+        safe_install.setToolTipText("Installiere den Crawler im gewählten Verzeichnis");
         safe_install.setBorder(null);
         safe_install.setBorderPainted(false);
         safe_install.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
@@ -247,7 +264,28 @@ public class Hochschul_Installer extends javax.swing.JFrame {
 
         InstallDirectory.setFont(new java.awt.Font("Verdana", 0, 11)); // NOI18N
         InstallDirectory.setText(System.getProperty("user.home"));
+        InstallDirectory.setToolTipText("Dein aktuell gewähltes Installations- und Update Verzeichnis");
         InstallDirectory.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
+
+        auth_key.setBackground(new java.awt.Color(233, 233, 233));
+        auth_key.setFont(new java.awt.Font("Verdana", 0, 14)); // NOI18N
+        auth_key.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+        auth_key.setToolTipText("Ein neuer, von dir ausgedachter, Authentifizierungs Schlüssel");
+        auth_key.setBorder(null);
+
+        auth_key2.setBackground(new java.awt.Color(255, 255, 255));
+        auth_key2.setFont(new java.awt.Font("Verdana", 0, 14)); // NOI18N
+        auth_key2.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        auth_key2.setText("fizierungs Schlüssel:");
+
+        QIS_Password2.setBackground(new java.awt.Color(255, 255, 255));
+        QIS_Password2.setFont(new java.awt.Font("Verdana", 0, 14)); // NOI18N
+        QIS_Password2.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+
+        auth_key1.setBackground(new java.awt.Color(255, 255, 255));
+        auth_key1.setFont(new java.awt.Font("Verdana", 0, 14)); // NOI18N
+        auth_key1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        auth_key1.setText("Ein neuer Authenti-");
 
         javax.swing.GroupLayout Center_Center_PanelLayout = new javax.swing.GroupLayout(Center_Center_Panel);
         Center_Center_Panel.setLayout(Center_Center_PanelLayout);
@@ -255,47 +293,67 @@ public class Hochschul_Installer extends javax.swing.JFrame {
             Center_Center_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, Center_Center_PanelLayout.createSequentialGroup()
                 .addGroup(Center_Center_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, Center_Center_PanelLayout.createSequentialGroup()
+                    .addGroup(Center_Center_PanelLayout.createSequentialGroup()
                         .addGap(32, 32, 32)
                         .addGroup(Center_Center_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(QIS_Password, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(QIS_Username, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                        .addGap(18, 18, 18)
-                        .addGroup(Center_Center_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(username, javax.swing.GroupLayout.PREFERRED_SIZE, 260, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(password, javax.swing.GroupLayout.PREFERRED_SIZE, 260, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                            .addComponent(QIS_Username, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, Center_Center_PanelLayout.createSequentialGroup()
+                                .addComponent(QIS_Password2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addGap(161, 161, 161))))
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, Center_Center_PanelLayout.createSequentialGroup()
-                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(InstallDirectory, javax.swing.GroupLayout.PREFERRED_SIZE, 367, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addGap(51, 51, 51))
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, Center_Center_PanelLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addContainerGap()
+                        .addComponent(auth_key1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGroup(Center_Center_PanelLayout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(auth_key2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(Center_Center_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, Center_Center_PanelLayout.createSequentialGroup()
-                        .addComponent(safe_install, javax.swing.GroupLayout.PREFERRED_SIZE, 215, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(129, 129, 129))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, Center_Center_PanelLayout.createSequentialGroup()
-                        .addComponent(change_directory)
-                        .addGap(142, 142, 142))))
+                    .addComponent(username, javax.swing.GroupLayout.PREFERRED_SIZE, 260, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(password, javax.swing.GroupLayout.PREFERRED_SIZE, 260, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(auth_key, javax.swing.GroupLayout.PREFERRED_SIZE, 260, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(51, 51, 51))
+            .addGroup(Center_Center_PanelLayout.createSequentialGroup()
+                .addGroup(Center_Center_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(Center_Center_PanelLayout.createSequentialGroup()
+                        .addGap(151, 151, 151)
+                        .addComponent(safe_install, javax.swing.GroupLayout.PREFERRED_SIZE, 215, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(Center_Center_PanelLayout.createSequentialGroup()
+                        .addGap(74, 74, 74)
+                        .addComponent(InstallDirectory, javax.swing.GroupLayout.PREFERRED_SIZE, 367, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, Center_Center_PanelLayout.createSequentialGroup()
+                .addGap(0, 0, Short.MAX_VALUE)
+                .addComponent(change_directory)
+                .addGap(157, 157, 157))
         );
         Center_Center_PanelLayout.setVerticalGroup(
             Center_Center_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(Center_Center_PanelLayout.createSequentialGroup()
-                .addGap(26, 26, 26)
+                .addGap(21, 21, 21)
                 .addComponent(InstallDirectory)
-                .addGap(18, 18, 18)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(change_directory)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 31, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(Center_Center_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(username, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(QIS_Username))
-                .addGap(27, 27, 27)
+                .addGap(18, 18, 18)
                 .addGroup(Center_Center_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(password, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(QIS_Password, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addGap(18, 18, 18)
+                .addGroup(Center_Center_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(auth_key, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(Center_Center_PanelLayout.createSequentialGroup()
+                        .addComponent(auth_key1)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(auth_key2)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(QIS_Password2)))
+                .addGap(21, 21, 21)
                 .addComponent(safe_install, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(30, 30, 30))
+                .addGap(28, 28, 28))
         );
 
         RedText_Line1.setFont(new java.awt.Font("Verdana", 0, 12)); // NOI18N
@@ -317,86 +375,30 @@ public class Hochschul_Installer extends javax.swing.JFrame {
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, Center_PanelLayout.createSequentialGroup()
                 .addContainerGap(45, Short.MAX_VALUE)
                 .addGroup(Center_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                    .addComponent(Center_Center_Panel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(RedText_Line3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(Center_Center_Panel, javax.swing.GroupLayout.DEFAULT_SIZE, 516, Short.MAX_VALUE)
                     .addComponent(RedText_Line1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(RedText_Line2, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(RedText_Line3, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(RedText_Line2, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addGap(59, 59, 59))
         );
         Center_PanelLayout.setVerticalGroup(
             Center_PanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(Center_PanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(Center_Center_Panel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(Center_Center_Panel, javax.swing.GroupLayout.PREFERRED_SIZE, 318, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(21, 21, 21)
                 .addComponent(RedText_Line1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(1, 1, 1)
+                .addGap(2, 2, 2)
                 .addComponent(RedText_Line2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(2, 2, 2)
                 .addComponent(RedText_Line3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(30, Short.MAX_VALUE))
+                .addGap(153, 153, 153))
         );
 
         getContentPane().add(Center_Panel, new org.netbeans.lib.awtextra.AbsoluteConstraints(150, 70, 620, 430));
 
         pack();
     }// </editor-fold>                        
-
-    private void safe_installActionPerformed(java.awt.event.ActionEvent evt) {                                             
-        try {
-            if(username.getText().isEmpty() || password.getText().isEmpty()) {
-                statusbar.append("Die Felder dürfen\nnicht leer sein!\n");
-                statusbar.update(statusbar.getGraphics());
-                throw new Exception("InstallationException");
-            }
-            //String directoryName = "";
-            try {
-                Preferences prefs = Preferences.userRoot().node("Hochschul-Scraper");
-                prefs.put("QIS_name", username.getText());
-                prefs.put("QIS_pwd", password.getText());
-            } catch (Exception e) {
-                statusbar.append("Installation \nfehlgeschlagen! \nKonnte Daten nicht speichern!");
-                statusbar.update(statusbar.getGraphics());
-                throw new Exception("InstallationException");
-            }
-            statusbar.append("Starte Download... \n");
-            statusbar.update(statusbar.getGraphics());
-            
-            try {
-                URL version_website = new URL ("https://mariolampert.de/HS-Bot/newest_version.txt");
-                newest_Version = new Scanner(version_website.openStream()).next();
-                Preferences prefs = Preferences.userRoot().node("Hochschul-Scraper");
-                prefs.put("newest_Version", newest_Version);
-                
-                URL website = new URL("https://mariolampert.de/HS-Bot/"+newest_Version);
-                ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-                //FileOutputStream fos = new FileOutputStream(System.getProperty("user.home") + "/Desktop/Hochschul-Bot.jar");
-                FileOutputStream fos = new FileOutputStream(absolute_Filedirectory + "/"+newest_Version);
-                fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-                
-            } catch (Exception e) {
-                statusbar.append("Installation \nfehlgeschlagen! \nKonnte nötige Dateien \nnicht downloaden!\n");
-                statusbar.update(statusbar.getGraphics());
-                throw new Exception("InstallationException");
-            }   
-            try {
-                deleteHKEY();
-                Process p = Runtime.getRuntime().exec("REG ADD HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run /v Hochschul-Bot /d \"\\\""+absolute_Filedirectory+"\\"+newest_Version + "\"\\\"");
-            } catch (Exception e) {
-                statusbar.append("Installation \nfehlgeschlagen! \nKonnte Autostart nicht hinzufügen!");
-                statusbar.update(statusbar.getGraphics());
-                throw new Exception("InstallationException");
-            }
-            statusbar.append("Erfolgreich installiert!\nDer Crawler läuft.\n");
-            statusbar.update(statusbar.getGraphics());
-            
-            ProcessBuilder pb = new ProcessBuilder("java", "-jar", absolute_Filedirectory + "/"+newest_Version);
-            Process p = pb.start();
-        } catch (Exception e) {
-            statusbar.append("Probier es noch ein mal!\n");
-            statusbar.update(statusbar.getGraphics());
-        }
-    }                                            
 
     private void uninstallActionPerformed(java.awt.event.ActionEvent evt) {                                          
         try {
@@ -414,8 +416,6 @@ public class Hochschul_Installer extends javax.swing.JFrame {
                 prefs.remove(preference);
             }
             
-            // path = FileSystems.getDefault().getPath("");
-            //String directoryName = path.toAbsolutePath().toString();
             deleteHKEY();
             executeCommand("REG DELETE HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run /v Hochschul-Bot");
             try {
@@ -453,24 +453,7 @@ public class Hochschul_Installer extends javax.swing.JFrame {
                 statusbar.append("Nix zum updaten!\nDer Crawler war noch\nnie installiert!\n");
             } else {
                 newest_Version = new Scanner(version_website.openStream()).next();
-            
-                //Path path = FileSystems.getDefault().getPath("");
-                //String directoryName = path.toAbsolutePath().toString();
-                
-		/*Process p2 = Runtime.getRuntime().exec("cmd /c for /F \"tokens=3\" %A in ('reg query \"HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run\" /v \"Hochschul-Bot\"') DO ECHO %A");
-                InputStream stdIn = p2.getInputStream();
-                InputStreamReader isr = new InputStreamReader(stdIn);
-                BufferedReader br = new BufferedReader(isr);
-                String line = "";
-                int count = 0;
-                while((line = br.readLine()) != null) {
-                        if(count == 2) {
-                                System.out.println(line);
-                                absolute_Filedirectory = line;
-                        }
-                        count++;
-                }*/
-                
+          
                 deleteHKEY();
                 Process p = Runtime.getRuntime().exec("REG ADD HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run /v Hochschul-Bot /d \"\\\""+absolute_Filedirectory+"\\"+newest_Version + "\"\\\"");
                 prefs.put("newest_Version", newest_Version);
@@ -494,10 +477,74 @@ public class Hochschul_Installer extends javax.swing.JFrame {
             absolute_Filedirectory = chooser.getSelectedFile().getAbsolutePath();
             InstallDirectory.setText(absolute_Filedirectory);
         } catch (NullPointerException e) {
-            
+            JOptionPane.showMessageDialog(new JFrame(), "Fehler!\nKonnte das Verzeichnis nicht ändern!.", "Hochschul-Crawler",
+                    JOptionPane.ERROR_MESSAGE);
         }
-        
+
     }                                                
+
+    private void safe_installActionPerformed(java.awt.event.ActionEvent evt) {                                             
+        try {
+            if(username.getText().isEmpty() || password.getText().isEmpty()) {
+                statusbar.append("Die Felder dürfen\nnicht leer sein!\n");
+                statusbar.update(statusbar.getGraphics());
+                throw new Exception("InstallationException");
+            }
+
+            try {
+                Preferences prefs = Preferences.userRoot().node("Hochschul-Scraper");
+                prefs.put("QIS_name", username.getText());
+                //prefs.put("QIS_pwd", password.getText());
+                
+                String tmp_pswd = encrypt(password.getText(), auth_key.getText());
+                prefs.put("QIS_pwd", tmp_pswd);
+                
+                PrintWriter key_writer = new PrintWriter(absolute_Filedirectory+"\\tmp_key.txt");
+                key_writer.println(auth_key.getText());
+                key_writer.close();
+            } catch (Exception e) {
+                statusbar.append("Installation \nfehlgeschlagen! \nKonnte Daten nicht speichern!");
+                statusbar.update(statusbar.getGraphics());
+                throw new Exception("InstallationException");
+            }
+            statusbar.append("Starte Download... \n");
+            statusbar.update(statusbar.getGraphics());
+
+            try {
+                URL version_website = new URL ("https://mariolampert.de/HS-Bot/newest_version.txt");
+                newest_Version = new Scanner(version_website.openStream()).next();
+                Preferences prefs = Preferences.userRoot().node("Hochschul-Scraper");
+                prefs.put("newest_Version", newest_Version);
+
+                URL website = new URL("https://mariolampert.de/HS-Bot/"+newest_Version);
+                ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+
+                FileOutputStream fos = new FileOutputStream(absolute_Filedirectory + "/"+newest_Version);
+                fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+
+            } catch (Exception e) {
+                statusbar.append("Installation \nfehlgeschlagen! \nKonnte nötige Dateien \nnicht downloaden!\n");
+                statusbar.update(statusbar.getGraphics());
+                throw new Exception("InstallationException");
+            }
+            try {
+                deleteHKEY();
+                Process p = Runtime.getRuntime().exec("REG ADD HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run /v Hochschul-Bot /d \"\\\""+absolute_Filedirectory+"\\"+newest_Version + "\"\\\"");
+            } catch (Exception e) {
+                statusbar.append("Installation \nfehlgeschlagen! \nKonnte Autostart nicht hinzufügen!");
+                statusbar.update(statusbar.getGraphics());
+                throw new Exception("InstallationException");
+            }
+            statusbar.append("Erfolgreich installiert!\nDer Crawler läuft.\n");
+            statusbar.update(statusbar.getGraphics());
+
+            ProcessBuilder pb = new ProcessBuilder("java", "-jar", absolute_Filedirectory + "/"+newest_Version);
+            Process p = pb.start();
+        } catch (Exception e) {
+            statusbar.append("Probier es noch ein mal!\n");
+            statusbar.update(statusbar.getGraphics());
+        }
+    }                                            
 
     /**
      * @param args the command line arguments
@@ -542,28 +589,26 @@ public class Hochschul_Installer extends javax.swing.JFrame {
         try {
             p = builder.start();
         } catch (IOException e) {
-            //System.out.println(e);
+            JOptionPane.showMessageDialog(new JFrame(), "Registryfehler! REGx1", "Hochschul-Crawler",
+                    JOptionPane.ERROR_MESSAGE);
         }
-        // get stdin of shell
+
         p_stdin = new BufferedWriter(new OutputStreamWriter(p.getOutputStream()));
 
-        // execute commands
         executeCommand("REG DELETE HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run /v Hochschul-Bot");
         try {
             Thread.sleep(100);
             executeCommand("Ja");
             Thread.sleep(100);
         } catch (Exception e) {
-            
+            JOptionPane.showMessageDialog(new JFrame(), "Registryfehler! REGx2", "Hochschul-Crawler",
+                    JOptionPane.ERROR_MESSAGE);
         } finally {
             executeCommand("exit");
         }
         
-
-        // write stdout of shell (=output of all commands)
         Scanner s = new Scanner(p.getInputStream());
         while (s.hasNext()) {
-            //System.out.println(s.next());
             s.next();
         }
         s.close();
@@ -571,15 +616,55 @@ public class Hochschul_Installer extends javax.swing.JFrame {
     
     private void executeCommand(String command) {
         try {
-            // single execution
             p_stdin.write(command);
             p_stdin.newLine();
             p_stdin.flush();
         } catch (IOException e) {
-            //System.out.println(e);
+            //JOptionPane.showMessageDialog(new JFrame(), "Registryfehler! REGx3", "Hochschul-Crawler",
+              //      JOptionPane.ERROR_MESSAGE);
         }
     }
-
+    
+    public static void setKey(String myKey) 
+    {
+        MessageDigest sha = null;
+        try {
+            key = myKey.getBytes("UTF-8");
+            sha = MessageDigest.getInstance("SHA-1");
+            key = sha.digest(key);
+            key = Arrays.copyOf(key, 16); 
+            secretKey = new SecretKeySpec(key, "AES");
+        } 
+        catch (NoSuchAlgorithmException e) {
+            JOptionPane.showMessageDialog(new JFrame(), "Registryfehler! PWDx1.", "Hochschul-Crawler",
+                    JOptionPane.ERROR_MESSAGE);
+            //e.printStackTrace();
+        } 
+        catch (UnsupportedEncodingException e) {
+            JOptionPane.showMessageDialog(new JFrame(), "Registryfehler! PWDx2.", "Hochschul-Crawler",
+                    JOptionPane.ERROR_MESSAGE);
+            //e.printStackTrace();
+        }
+    }
+ 
+    public static String encrypt(String strToEncrypt, String secret) 
+    {
+        try
+        {
+            setKey(secret);
+            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+            return Base64.getEncoder().encodeToString(cipher.doFinal(strToEncrypt.getBytes("UTF-8")));
+        } 
+        catch (Exception e) 
+        {
+            JOptionPane.showMessageDialog(new JFrame(), "Registryfehler! PWDx3.", "Hochschul-Crawler",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+        return null;
+    }
+    
+    
     // Variables declaration - do not modify                     
     private javax.swing.JPanel Center_Center_Panel;
     private javax.swing.JPanel Center_Panel;
@@ -587,12 +672,16 @@ public class Hochschul_Installer extends javax.swing.JFrame {
     private javax.swing.JLabel InstallDirectory;
     private javax.swing.JPanel Left_Panel;
     private javax.swing.JLabel QIS_Password;
+    private javax.swing.JLabel QIS_Password2;
     private javax.swing.JLabel QIS_Username;
     private java.awt.Label RedText_Line1;
     private java.awt.Label RedText_Line2;
     private java.awt.Label RedText_Line3;
     private javax.swing.JPanel Right_Panel;
     private javax.swing.JLabel Statusbar_Label;
+    private javax.swing.JPasswordField auth_key;
+    private javax.swing.JLabel auth_key1;
+    private javax.swing.JLabel auth_key2;
     private javax.swing.JButton change_directory;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel3;
